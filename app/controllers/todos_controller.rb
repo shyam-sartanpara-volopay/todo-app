@@ -29,7 +29,7 @@ class TodosController < ApplicationController
     # DELETE /todos/:id
     def destroy
       if @todo.destroy
-        render json: { message: "Todo deleted successfully" }
+        head :no_content
       else
         render json: { errors: "Could not delete Todo" }, status: :unprocessable_entity
       end
