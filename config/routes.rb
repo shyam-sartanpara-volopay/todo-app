@@ -1,5 +1,11 @@
 Rails.application.routes.draw do
-  scope defaults: { format: :json } do
-  resources :todos, only: [:index, :create, :update, :destroy]
+  resources :users do
+    resources :todo_lists do
+      resources :todos do
+        member do
+          patch :toggle_status
+        end
+      end
+    end
   end
 end

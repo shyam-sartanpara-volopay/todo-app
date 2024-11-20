@@ -1,48 +1,59 @@
 class TodosController < ApplicationController
-  before_action :set_todo, only: [:update, :destroy]
+  before_action :set_todo_list
+  before_action :set_todo, only: [:toggle_status, :update, :destroy]
 
-  # GET /todos
+  # GET /users/:user_id/todo_lists/:todo_list_id/todos
   def index
-    todos = Todo.all
-    render json: todos
+    @todos = @todo_list.todos
+    render json: @todos
   end
 
-  # POST /todos
+  # POST /users/:user_id/todo_lists/:todo_list_id/todos
   def create
-    todo = Todo.new(todo_params)
-    if todo.save
-      render json: todo, status: :created
+    @todo = @todo_list.todos.build(todo_params)
+    if @todo.save
+      render json: @todo, status: :created
     else
-      render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @todo.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
-  # PUT /todos/:id
+  # PATCH /users/:user_id/todo_lists/:todo_list_id/todos/:id/toggle_status
+  def toggle_status
+    @todo.toggle_status!
+    render json: @todo
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # PUT /users/:user_id/todo_lists/:todo_list_id/todos/:id
   def update
     if @todo.update(todo_params)
       render json: @todo
     else
-      render json: { errors: @todo.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @todo.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
-  # DELETE /todos/:id
+  # DELETE /users/:user_id/todo_lists/:todo_list_id/todos/:id
   def destroy
-    if @todo.destroy
-      head :no_content
-    else
-      render json: { errors: "Could not delete Todo" }, status: :unprocessable_entity
-    end
+    @todo.destroy
+    head :no_content
   end
 
   private
 
+  def set_todo_list
+    @todo_list = TodoList.find_by(id: params[:todo_list_id], user_id: params[:user_id])
+    return render json: { error: 'Todo list not found' }, status: :not_found unless @todo_list
+  end
+
   def set_todo
-    @todo = Todo.find_by(id: params[:id])
-    render json: { error: "Todo not found" }, status: :not_found unless @todo
+    @todo = @todo_list.todos.find_by(id: params[:id])
+    return render json: { error: 'Todo not found' }, status: :not_found unless @todo
   end
 
   def todo_params
-    params.require(:todo).permit(:title, :done)
+    params.require(:todo).permit(:title, :status)
   end
 end
