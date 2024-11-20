@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  resources :users do
+    resources :todo_lists, only: [:index, :create] # Nested routes for todo_lists under users
+  end
 
-  # Defines the root path route ("/")
-  # root "articles#index"
-  resources :todos, only: [:index, :create, :update, :destroy]
+  resources :todo_lists, only: [:show, :create, :update, :destroy]
 end

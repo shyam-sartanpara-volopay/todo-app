@@ -10,16 +10,33 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_11_14_101543) do
+ActiveRecord::Schema[7.0].define(version: 2024_11_18_062724) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "todos", force: :cascade do |t|
+  create_table "todo_lists", force: :cascade do |t|
     t.string "title"
-    t.boolean "done"
+    t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "created_by"
+    t.index ["user_id"], name: "index_todo_lists_on_user_id"
   end
 
+  create_table "todos", force: :cascade do |t|
+    t.string "title"
+    t.string "status"
+    t.bigint "todo_list_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["todo_list_id"], name: "index_todos_on_todo_list_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_foreign_key "todo_lists", "users"
+  add_foreign_key "todos", "todo_lists"
 end
