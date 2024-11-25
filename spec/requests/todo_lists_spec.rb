@@ -7,11 +7,6 @@ RSpec.describe "TodoLists", type: :request do
   let!(:todo_list) { create(:todo_list, user: user, title: "Old Name") }
   let(:auth_headers) { user.create_new_auth_token } 
 
-
-  def json
-    JSON.parse(response.body)
-  end
-
   #GET
   describe "GET /todo_lists" do
     context "user is authorized" do
