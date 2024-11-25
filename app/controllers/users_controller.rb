@@ -1,11 +1,11 @@
 class UsersController < ApplicationController
-  # GET /users
+  # GET 
   def index
     users = User.all
     render json: users
   end
 
-  # GET /users/:id
+  # GET
   def show
     user = User.find_by(id: params[:id])
     if user
@@ -15,8 +15,9 @@ class UsersController < ApplicationController
     end
   end
 
-  # POST /users
+  # POST
   def create
+    Rails.logger.debug "Received parameters: #{params.inspect}"
     user = User.new(user_params)
     if user.save
       render json: user, status: :created
@@ -25,7 +26,7 @@ class UsersController < ApplicationController
     end
   end
 
-  # PUT/PATCH /users/:id
+  # PUT/PATCH
   def update
     user = User.find_by(id: params[:id])
     if user
@@ -39,7 +40,7 @@ class UsersController < ApplicationController
     end
   end
 
-  # DELETE /users/:id
+  # DELETE
   def destroy
     user = User.find_by(id: params[:id])
     if user
@@ -52,8 +53,7 @@ class UsersController < ApplicationController
 
   private
 
-  # Strong parameters
   def user_params
-    params.require(:user).permit(:name, :email)
+    params.permit(:name,:email, :password, :password_confirmation)  
   end
 end

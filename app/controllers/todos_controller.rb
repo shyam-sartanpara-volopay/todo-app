@@ -1,15 +1,17 @@
 class TodosController < ApplicationController
+  before_action :authenticate_user!  
+  before_action :set_todo_list, only: [:index, :create]  
   before_action :set_todo, only: [:update, :destroy, :toggle_status]
 
-  # GET /todos
+  # GET 
   def index
-    todos = Todo.all
+    todos = @todo_list.todos
     render json: todos
   end
 
-  # POST /todos
+  # POST 
   def create
-    todo = Todo.new(todo_params)
+    todo = @todo_list.todos.new(todo_params)
     if todo.save
       render json: todo, status: :created
     else
@@ -17,7 +19,7 @@ class TodosController < ApplicationController
     end
   end
 
-  # PUT /todos/:id
+  # PUT
   def update
     if @todo.update(todo_params)
       render json: @todo
@@ -26,7 +28,7 @@ class TodosController < ApplicationController
     end
   end
 
-  # DELETE /todos/:id
+  # DELETE 
   def destroy
     if @todo.destroy
       head :no_content
@@ -35,24 +37,33 @@ class TodosController < ApplicationController
     end
   end
 
-  # PATCH /todos/:id/toggle_status
+  # PATCH
   def toggle_status
     if @todo.toggle_status!
       render json: @todo
     else
-      render json: { errors: "Could not toggle status" }, status: :unprocessable_entity
+      render json: { error: 'Failed to toggle status' }, status: :unprocessable_entity
     end
   end
 
+
   private
+
+  
+  def set_todo_list
+    @todo_list = current_user.todo_lists.find_by(id: params[:todo_list_id])
+    render json: { error: "Todo List not found" }, status: :not_found unless @todo_list
+  end
 
   def set_todo
     @todo = Todo.find_by(id: params[:id])
-    render json: { error: "Todo not found" }, status: :not_found unless @todo
+    if @todo.nil?
+      render json: { error: "Todo not found" }, status: :not_found
+    end
   end
+  
 
   def todo_params
-    # Ensure the `todo_list_id` is permitted when creating a todo
-    params.require(:todo).permit(:title, :status, :todo_list_id)
+    params.require(:todo).permit(:title, :status)
   end
 end

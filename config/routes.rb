@@ -1,7 +1,11 @@
 Rails.application.routes.draw do
-  resources :users do
-    resources :todo_lists, only: [:index, :create] # Nested routes for todo_lists under users
+  mount_devise_token_auth_for 'User', at: 'auth'
+  resources :users
+  resources :todo_lists, only: [:show, :index, :create, :update, :destroy] do
+    resources :todos, only: [:index, :create, :update, :destroy] do
+      member do
+        patch :toggle_status
+      end
+    end
   end
-
-  resources :todo_lists, only: [:show, :create, :update, :destroy]
 end

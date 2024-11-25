@@ -1,7 +1,6 @@
 FactoryBot.define do
   factory :todo do
     title { "MyString" }
-    status { "MyString" }
-    todo_list { nil }
+    status {0}
   end
 end

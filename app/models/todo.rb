@@ -1,16 +1,15 @@
 class Todo < ApplicationRecord
   belongs_to :todo_list
 
-  #Valid statuses
-  STATUSES = %w[pending completed archived].freeze
+  enum status: { pending: 0, completed: 1, archived: 2 }
 
   validates :title, presence: true
-  validates :status, inclusion: { in: STATUSES }
-
-  # Toggle the status to the next state
+  validates :status, inclusion: { in: statuses.keys }
+  
   def toggle_status!
-    current_index = STATUSES.index(status)
-    next_index = (current_index + 1) % STATUSES.size
-    update!(status: STATUSES[next_index])
+    return false if archived? 
+    new_status = pending? ? :completed : :archived
+    update(status: new_status)
   end
+
 end
