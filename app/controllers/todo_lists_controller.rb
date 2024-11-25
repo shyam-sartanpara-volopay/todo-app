@@ -1,4 +1,5 @@
 class TodoListsController < ApplicationController
+  before_action :authenticate_user!   # Ensure the user is authenticated via token
   before_action :set_user
   before_action :set_todo_list, only: [:show, :update, :destroy]
 

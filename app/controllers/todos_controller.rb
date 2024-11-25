@@ -1,4 +1,5 @@
 class TodosController < ApplicationController
+  before_action :authenticate_user!   # Ensure the user is authenticated via token
   before_action :set_todo_list
   before_action :set_todo, only: [:toggle_status, :update, :destroy]
 
@@ -20,10 +21,11 @@ class TodosController < ApplicationController
 
   # PATCH /users/:user_id/todo_lists/:todo_list_id/todos/:id/toggle_status
   def toggle_status
-    @todo.toggle_status!
-    render json: @todo
-  rescue ActiveRecord::RecordInvalid => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    if @todo.toggle_status!
+      render json: @todo, status: :ok
+    else
+      render json: { error: 'Failed to toggle status' }, status: :unprocessable_entity
+    end
   end
 
   # PUT /users/:user_id/todo_lists/:todo_list_id/todos/:id
@@ -43,16 +45,25 @@ class TodosController < ApplicationController
 
   private
 
+  # Set the TodoList by user_id and todo_list_id
   def set_todo_list
     @todo_list = TodoList.find_by(id: params[:todo_list_id], user_id: params[:user_id])
-    return render json: { error: 'Todo list not found' }, status: :not_found unless @todo_list
+    unless @todo_list
+      logger.error "Todo list not found: #{params[:todo_list_id]}"
+      render json: { error: 'Todo list not found' }, status: :not_found
+    end
   end
 
+  # Set the Todo by its id within the todo list
   def set_todo
     @todo = @todo_list.todos.find_by(id: params[:id])
-    return render json: { error: 'Todo not found' }, status: :not_found unless @todo
+    unless @todo
+      logger.error "Todo not found: #{params[:id]}"
+      render json: { error: 'Todo not found' }, status: :not_found
+    end
   end
 
+  # Permit the necessary parameters for Todo creation and updating
   def todo_params
     params.require(:todo).permit(:title, :status)
   end

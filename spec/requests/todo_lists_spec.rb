@@ -1,7 +1,129 @@
 require 'rails_helper'
 
 RSpec.describe "TodoLists", type: :request do
-  describe "GET /index" do
-    pending "add some examples (or delete) #{__FILE__}"
+  let!(:user) {create(:user)} #Create users 
+  let!(:todo_lists) { create_list(:todo_list, 5, user: user) } # Create 5 todo lists for the user
+  let(:auth_headers) { user.create_new_auth_token } # Authentication headers
+
+
+  def json
+    JSON.parse(response.body)
   end
+
+  describe "GET /users/:user_id/todo_lists" do
+    context "user is authorized" do
+      it "returns all todo lists" do
+        get "/users/#{user.id}/todo_lists",headers:auth_headers
+        expect(response).to have_http_status(:ok)
+        expect(json.size).to eq(5)    
+      end  
+    end
+    context "unauthorized user" do
+      it "returns invalid users" do
+        get "/users/#{user.id}/todo_lists"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
+  describe "POST /users/:user_id/todo_lists" do
+    let(:valid_params) {{todo_list:{title: "new todo list"}}}
+    let(:invalid_params) { { todo_list: { title: "" } } }  
+    let(:auth_headers) { user.create_new_auth_token } # Authentication headers
+    context "with valid parameter" do
+      it "creates a new todo list" do
+        expect{
+          post "/users/#{user.id}/todo_lists", params: valid_params, headers: auth_headers
+      }.to change(TodoList, :count).by(1)
+        expect(response).to have_http_status(:created)
+        expect(json["title"]).to eq("new todo list")
+      end
+    end
+
+    context "with invalid parameters" do
+      it "returns invalid entity" do
+        expect {
+          post "/users/#{user.id}/todo_lists", params: invalid_params, 
+          headers: auth_headers}.not_to change(TodoList, :count)
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(json["error"]).to include("Title can't be blank")
+      end    
+    end 
+  end
+  
+  describe "GET /users/:user_id/todo_lists/:id" do
+    let(:user) { create(:user) } # Ensure you have a user created
+    let!(:todo_list) { create(:todo_list, user: user) } 
+    let(:auth_headers) { user.create_new_auth_token}
+    context "when todo list exists" do
+      it "returns the todo list" do
+        get "/users/#{user.id}/todo_lists/#{todo_list.id}",headers:auth_headers
+        expect(response).to have_http_status(:ok)
+        expect(json["id"]).to eq(todo_list.id)
+        expect(json["title"]).to eq(todo_list.title)
+      end
+    end
+    
+    context "when todo list does not exist" do
+      it "returns not found" do
+        get "/users/#{user.id}/todo_lists/999", headers: auth_headers
+        expect(response).to have_http_status(:not_found)
+        expect(json["error"]).to eq("Todo list not found")
+      end    
+    end 
+  end
+
+  describe "PUT /users/:user_id/todo_lists/:id" do
+    let(:user) { create(:user) } # Create a user
+    let!(:todo_list) { create(:todo_list, user: user) } 
+    let(:valid_params) { { todo_list: { title: "Updated Title" } } }
+    let(:invalid_params) { { todo_list: { title: "" } } }
+    let(:auth_headers) { user.create_new_auth_token}
+
+    context "with valid parameters" do
+      it "updates the todo list" do
+        put "/users/#{user.id}/todo_lists/#{todo_list.id}", params: valid_params, headers: auth_headers
+
+        expect(response).to have_http_status(:ok)
+        expect(json["title"]).to eq("Updated Title")
+      end
+    end
+
+    context "with invalid parameters" do
+      it "returns unprocessable entity" do
+        put "/users/#{user.id}/todo_lists/#{todo_list.id}", params: invalid_params, headers: auth_headers
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(json["error"]).to include("Title can't be blank")
+      end
+    end
+  end
+
+  describe "DELETE /users/:user_id/todo_lists/:id" do
+    let(:user) { create(:user) }                # Create a user
+    let!(:todo_list) { create(:todo_list, user: user) } 
+    let(:auth_headers) { user.create_new_auth_token}
+
+    it "deletes the todo list" do
+      expect {
+        delete "/users/#{user.id}/todo_lists/#{todo_list.id}", headers: auth_headers
+      }.to change(TodoList, :count).by(-1)
+
+      expect(response).to have_http_status(:no_content)
+    end
+
+    context "when the todo list does not exist" do
+      it "returns not found" do
+        delete "/users/#{user.id}/todo_lists/999", headers: auth_headers
+
+        expect(response).to have_http_status(:not_found)
+        expect(json["error"]).to eq("Todo list not found")
+      end
+    end
+  end
+
+
+  
+
+
 end
