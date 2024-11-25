@@ -6,10 +6,6 @@ RSpec.describe "TodoLists", type: :request do
   let(:auth_headers) { user.create_new_auth_token } # Authentication headers
 
 
-  def json
-    JSON.parse(response.body)
-  end
-
   describe "GET /users/:user_id/todo_lists" do
     context "user is authorized" do
       it "returns all todo lists" do

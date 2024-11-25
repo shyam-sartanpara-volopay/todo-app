@@ -6,9 +6,9 @@ RSpec.describe "Todos", type: :request do
   let!(:todos) { create_list(:todo, 5, todo_list: todo_list, status: :pending) }
   let(:auth_headers) { user.create_new_auth_token }
 
-  def json
-    JSON.parse(response.body)
-  end
+  #def json
+  #  JSON.parse(response.body)
+  #end
 
   describe "GET /users/:user_id/todo_lists/:todo_list_id/todos" do
     context "when the user is authenticated" do
