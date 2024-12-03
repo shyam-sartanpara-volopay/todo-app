@@ -1,12 +1,19 @@
 class TodoListsController < ApplicationController
+
   before_action :authenticate_user!   # Ensure the user is authenticated via token
   before_action :set_user
   before_action :set_todo_list, only: [:show, :update, :destroy]
+  
 
   # GET /users/:user_id/todo_lists
   def index
-    @todo_lists = @user.todo_lists
-    render json: @todo_lists
+    @todo_lists = policy_scope(TodoList)
+    if @todo_lists.none?
+      render json: { error: 'Not Found' }, status: :not_found
+    else
+      render json: @todo_lists
+    end  
+    
   end
 
   # POST /users/:user_id/todo_lists
@@ -21,7 +28,9 @@ class TodoListsController < ApplicationController
 
   # GET /users/:user_id/todo_lists/:id
   def show
+    authorize @todo_list
     render json: @todo_list
+    
   end
 
   # PUT /users/:user_id/todo_lists/:id
@@ -47,8 +56,10 @@ class TodoListsController < ApplicationController
   end
 
   def set_todo_list
-    @todo_list = @user.todo_lists.find_by(id: params[:id])
-    return render json: { error: 'Todo list not found' }, status: :not_found unless @todo_list
+    @todo_list = policy_scope(TodoList).find_by(id: params[:id])
+    unless @todo_list
+    return render json: { error: 'Todo list not found or not accessible' }, status: :not_found 
+  end
   end
 
   def todo_list_params

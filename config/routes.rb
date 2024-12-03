@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   
   resources :users do
     resources :todo_lists do
+      resources :collaborators, only: [:create, :index, :destroy] 
       resources :todos do
         member do
           patch :toggle_status
