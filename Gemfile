@@ -34,6 +34,8 @@ gem "devise_token_auth"
 
 gem 'omniauth', '>= 1.0.0'
 gem 'faker', '~> 2.18'
+gem 'pundit'
+
 
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]

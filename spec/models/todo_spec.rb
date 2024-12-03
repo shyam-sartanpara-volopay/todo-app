@@ -63,4 +63,3 @@ RSpec.describe Todo, type: :model do
     end
   end
 end
-

@@ -2,44 +2,89 @@ require 'rails_helper'
 
 RSpec.describe "Todos API", type: :request do
   let!(:user) { create(:user) } 
+  let(:collaborator_user) { create(:user) }
   let!(:todo_list) { create(:todo_list, user: user) }
   let!(:todos) { create_list(:todo, 10, todo_list: todo_list) }
+  let!(:collaborator) { create(:collaborator, todo_list: todo_list, user: collaborator_user) }
   let(:todo) { todos.first }
   let(:auth_headers) { user.create_new_auth_token } 
   let(:invalid_params) { { title: "", status: "" } }
+  let(:collaborator_headers) { collaborator_user.create_new_auth_token }
+
 
   # GET
   describe "GET /todo_lists/:todo_list_id/todos" do
-    it "returns todos when authorized and todo list exists" do
-      get "/todo_lists/#{todo_list.id}/todos", headers: auth_headers
-      expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body).size).to eq(10)
+
+    context "when authorized" do
+
+      it "returns todos when authorized by owner and todo list exists" do
+        get "/todo_lists/#{todo_list.id}/todos", headers: auth_headers
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body).size).to eq(10)
+      end
+
+      it "returns todos when authorized by collaborator and todo list exists" do
+        get "/todo_lists/#{todo_list.id}/todos", headers: collaborator_headers
+        expect(response).to have_http_status(:ok)
+        expect(json.size).to eq(10)
+      end
+
+      it "returns not found when todo list does not exist" do
+        get "/todo_lists/99999/todos", headers: auth_headers
+        expect(response).to have_http_status(:not_found)
+      end
+
     end
 
-    it "returns not found when todo list does not exist" do
-      get "/todo_lists/99999/todos", headers: auth_headers
-      expect(response).to have_http_status(:not_found)
-    end
+    context "when unauthorized" do
+      it "returns unauthorized when no auth headers" do
+        get "/todo_lists/#{todo_list.id}/todos"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end 
 
-    it "returns unauthorized when no auth headers" do
-      get "/todo_lists/#{todo_list.id}/todos"
-      expect(response).to have_http_status(:unauthorized)
-    end
   end
+
+
 
   # POST
   describe "POST /todo_lists/:todo_list_id/todos" do
+
     let(:new_todo_params) { { title: "New Todo", status: "pending" } }
-    it "creates a new todo with valid params" do
-      post "/todo_lists/#{todo_list.id}/todos", params: { todo: new_todo_params }, headers: auth_headers
-      expect(response).to have_http_status(:created)
-      expect(JSON.parse(response.body)["title"]).to eq("New Todo")
+
+    context "when the user is the owner" do
+      it "creates a new todo with valid params" do
+        post "/todo_lists/#{todo_list.id}/todos", params: { todo: new_todo_params }, headers: auth_headers
+        expect(response).to have_http_status(:created)
+        expect(JSON.parse(response.body)["title"]).to eq("New Todo")
+      end
+  
+      it "returns errors with invalid params" do
+        post "/todo_lists/#{todo_list.id}/todos", params: { todo: invalid_params }, headers: auth_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["errors"]).to include("Title can't be blank")
+      end
     end
 
-    it "returns errors with invalid params" do
-      post "/todo_lists/#{todo_list.id}/todos", params: { todo: invalid_params }, headers: auth_headers
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(JSON.parse(response.body)["errors"]).to include("Title can't be blank")
+    context "when the user is a collaborator" do
+      it "creates a new todo with valid params" do
+        post "/todo_lists/#{todo_list.id}/todos", params: { todo: new_todo_params }, headers: collaborator_headers
+        expect(response).to have_http_status(:created)
+        expect(JSON.parse(response.body)["title"]).to eq("New Todo")
+      end
+  
+      it "returns errors with invalid params" do
+        post "/todo_lists/#{todo_list.id}/todos", params: { todo: invalid_params }, headers: collaborator_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["errors"]).to include("Title can't be blank")
+      end
+    end
+
+    context "when unauthorized" do
+      it "returns unauthorized status" do
+        post "/todo_lists/#{todo_list.id}/todos", params: { todo: new_todo_params }
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
   end
 
@@ -47,8 +92,8 @@ RSpec.describe "Todos API", type: :request do
   describe "PUT /todo_lists/:todo_list_id/todos/:id" do
     let!(:todo) { create(:todo, todo_list: todo_list) }
     let(:valid_params) { { title: "Updated Title", status: "completed" } }
-    
-    context "when authorized" do
+
+    context "when the user is the owner" do
       it "updates the todo with valid params" do
         put "/todo_lists/#{todo_list.id}/todos/#{todo.id}", params: { todo: valid_params }, headers: auth_headers
         expect(response).to have_http_status(:ok)
@@ -58,6 +103,20 @@ RSpec.describe "Todos API", type: :request do
   
       it "returns errors with invalid params" do
         put "/todo_lists/#{todo_list.id}/todos/#{todo.id}", params: { todo: invalid_params }, headers: auth_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["errors"]).to include("Title can't be blank")
+      end
+    end
+    context "when the user is a collaborator" do
+      it "updates the todo with valid params" do
+        put "/todo_lists/#{todo_list.id}/todos/#{todo.id}", params: { todo: valid_params }, headers: collaborator_headers
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)["title"]).to eq("Updated Title")
+        expect(JSON.parse(response.body)["status"]).to eq("completed")
+      end
+  
+      it "returns errors with invalid params" do
+        put "/todo_lists/#{todo_list.id}/todos/#{todo.id}", params: { todo: invalid_params }, headers: collaborator_headers
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)["errors"]).to include("Title can't be blank")
       end
