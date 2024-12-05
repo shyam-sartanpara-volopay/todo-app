@@ -1,11 +1,4 @@
 class TodoListPolicy < ApplicationPolicy
-  attr_reader :user, :todo_list
-
-  def initialize(user, todo_list)
-    @user = user
-    @todo_list = todo_list
-  end
-
   def index?
     user_owns_todo_list? || user_collaborates_on_todo_list?
   end
@@ -17,7 +10,7 @@ class TodoListPolicy < ApplicationPolicy
   end
 
   def create?
-    user_owns_todo_list?
+    true
   end
 
   def update?
@@ -40,10 +33,10 @@ class TodoListPolicy < ApplicationPolicy
   private
 
   def user_owns_todo_list?
-    todo_list.user_id == user.id
+    @record.user_id == user.id
   end
 
   def user_collaborates_on_todo_list?
-    todo_list.collaborators.exists?(user_id: user.id)
+    @record.collaborators.exists?(user_id: user.id)
   end
 end

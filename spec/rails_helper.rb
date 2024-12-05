@@ -37,6 +37,7 @@ RSpec.configure do |config|
   RSpec.configure do |config|
     config.include Module.new {
       def json
+        return {} if response.body.blank?
         JSON.parse(response.body)
       end
     }

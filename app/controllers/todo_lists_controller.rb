@@ -18,6 +18,8 @@ class TodoListsController < ApplicationController
 
   # POST /users/:user_id/todo_lists
   def create
+    @todo_list = TodoList.new(todo_list_params.merge(user: @user))
+    authorize @todo_list
     @todo_list = @user.todo_lists.build(todo_list_params)
     if @todo_list.save
       render json: @todo_list, status: :created

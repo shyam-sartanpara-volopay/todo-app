@@ -8,6 +8,7 @@ RSpec.describe "Collaborators", type: :request do
 
   describe "GET /users/:user_id/todo_lists/:todo_list_id/collaborators" do
     context "when the user is authorized" do
+      let!(:todo_list) { create(:todo_list, user: user) } 
       let!(:collaborator) { create(:collaborator, user: collaborator_user, todo_list: todo_list) }
 
       it "returns all collaborators of the todo list" do

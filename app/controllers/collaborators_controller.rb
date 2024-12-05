@@ -7,12 +7,14 @@ class CollaboratorsController < ApplicationController
   #GET
   def index
     @collaborator = @todo_list.collaborators
+    authorize @collaborator
     render json: @collaborator, status: :ok
   end
   
   #POST
   def create
     @collaborator = @todo_list.collaborators.build(collab_params)
+    authorize @collaborator
     if @collaborator.save
       render json: @collaborator, status: :created
     else
@@ -25,6 +27,7 @@ class CollaboratorsController < ApplicationController
   def destroy
     @collaborator = @todo_list.collaborators.find_by(id: params[:id])
     if @collaborator
+      authorize @collaborator
       @collaborator.destroy
       render json: { message: 'Collaborator removed successfully' }, status: :ok
     else
