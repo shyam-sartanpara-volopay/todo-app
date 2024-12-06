@@ -1,21 +1,36 @@
 require 'rails_helper'
 
 RSpec.describe "TodoLists", type: :request do
-  let!(:user) { create(:user) } 
+  let(:user) { create(:user) }
+  let(:collaborator_user) { create(:user) }
   let!(:todo_lists) { create_list(:todo_list, 10, user: user) } 
   let(:todo_list) { todo_lists.first } 
-  let!(:todo_list) { create(:todo_list, user: user, title: "Old Name") }
+  let!(:collaborator) { create(:collaborator, todo_list: todo_list, user: collaborator_user) }
+  let!(:collaborated_list) { create(:todo_list, user: create(:user)) }
   let(:auth_headers) { user.create_new_auth_token } 
+  let(:collaborator_headers) { collaborator_user.create_new_auth_token }
+
+  before do
+    collaborated_list.collaborators << collaborator
+  end
 
   #GET
   describe "GET /todo_lists" do
     context "user is authorized" do
-      it "returns all todo lists" do
-        get "/todo_lists",headers:auth_headers
+      it "returns todo lists owned by the user and collaborated on" do
+        get "/todo_lists", headers: collaborator_headers
         expect(response).to have_http_status(:ok)
-        expect(json.size).to eq(11)    
-      end  
+        expect(json.size).to eq(1) 
+        expect(json.first['id']).to eq(collaborated_list.id)
+      end
+
+      it "returns all owned todo lists for the user" do
+        get "/todo_lists", headers: auth_headers
+        expect(response).to have_http_status(:ok)
+        expect(json.size).to eq(10)
+      end
     end
+    
     context "unauthorized user" do
       it "returns invalid users" do
         get "/todo_lists"
@@ -34,10 +49,16 @@ RSpec.describe "TodoLists", type: :request do
         expect(json['title']).to eq(todo_list.title)
       end
 
+      it "returns the collaborated todo list" do
+        get "/todo_lists/#{collaborated_list.id}", headers: collaborator_headers
+        expect(response).to have_http_status(:ok)
+        expect(json['id']).to eq(collaborated_list.id)
+      end
+
       it "returns not found status" do
         get "/todo_lists/0", headers: auth_headers
         expect(response).to have_http_status(:not_found)
-        expect(json['error']).to eq("Todo List not found")
+        expect(json['error']).to include("Todo List not found") 
       end
     end
 
@@ -79,6 +100,7 @@ RSpec.describe "TodoLists", type: :request do
 
   #PUT
   describe "PUT /todo_lists/:id" do
+    let!(:todo_list) { create(:todo_list, user: user, title: "Old Name") }
     let(:valid_attributes) { { title: "Updated Name" } }
     let(:invalid_attributes) { { title: "" } }
 

@@ -7,6 +7,7 @@ RSpec.describe TodoList, type: :model do
   describe "Associations" do
     it { should belong_to(:user) }
     it { should have_many(:todos).dependent(:destroy) }
+    it { should have_many(:collaborators).dependent(:destroy) }
   end
 
   describe "Validations" do

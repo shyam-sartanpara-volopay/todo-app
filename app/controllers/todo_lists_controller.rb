@@ -4,13 +4,15 @@ class TodoListsController < ApplicationController
 
   # GET
   def index
-    todo_lists = current_user.todo_lists
+    todo_lists = policy_scope(TodoList)
     render json: todo_lists
   end
 
   # GET
   def show
+    @todo_list = TodoList.find_by(id: params[:id])
     if @todo_list
+      authorize @todo_list
       render json: @todo_list
     else
       render json: { error: 'Todo List not found' }, status: :not_found
@@ -19,6 +21,8 @@ class TodoListsController < ApplicationController
 
   # POST
   def create
+    todo_list = TodoList.new(todo_list_params.merge(user: @user))
+    authorize todo_list
     todo_list = current_user.todo_lists.build(todo_list_params)
     if todo_list.save
       render json: todo_list, status: :created
@@ -29,7 +33,8 @@ class TodoListsController < ApplicationController
 
   # PUT
   def update
-    if @todo_list&.update(todo_list_params)
+    authorize @todo_list
+    if @todo_list.update(todo_list_params)
       render json: @todo_list
     else
       render json: { error: 'Unable to update Todo List' }, status: :unprocessable_entity
@@ -38,7 +43,8 @@ class TodoListsController < ApplicationController
 
   # DELETE
   def destroy
-    if @todo_list&.destroy
+    authorize @todo_list
+    if @todo_list.destroy
       render json: { message: 'Todo List deleted successfully' }, status: :ok
     else
       render json: { error: 'Unable to delete Todo List' }, status: :unprocessable_entity
@@ -52,6 +58,9 @@ class TodoListsController < ApplicationController
   end
 
   def set_todo_list
-    @todo_list = current_user.todo_lists.find_by(id: params[:id])
+    @todo_list = policy_scope(TodoList).find_by(id: params[:id])
+    unless @todo_list
+      render json: { error: "Todo List not found or not accessible" }, status: :not_found
+    end
   end
 end
