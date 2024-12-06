@@ -1,6 +1,4 @@
 class TodoListsController < ApplicationController
-  include Pundit::Authorization
-
   before_action :authenticate_user! 
   before_action :set_todo_list, only: [:show, :update, :destroy] 
 
@@ -23,6 +21,8 @@ class TodoListsController < ApplicationController
 
   # POST
   def create
+    todo_list = TodoList.new(todo_list_params.merge(user: @user))
+    authorize todo_list
     todo_list = current_user.todo_lists.build(todo_list_params)
     if todo_list.save
       render json: todo_list, status: :created
@@ -33,6 +33,7 @@ class TodoListsController < ApplicationController
 
   # PUT
   def update
+    authorize @todo_list
     if @todo_list.update(todo_list_params)
       render json: @todo_list
     else
@@ -42,6 +43,7 @@ class TodoListsController < ApplicationController
 
   # DELETE
   def destroy
+    authorize @todo_list
     if @todo_list.destroy
       render json: { message: 'Todo List deleted successfully' }, status: :ok
     else

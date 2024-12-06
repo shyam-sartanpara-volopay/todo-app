@@ -1,11 +1,4 @@
 class TodoPolicy < ApplicationPolicy
-  attr_reader :user, :todo
-
-  def initialize(user, todo)
-    @user = user
-    @todo = todo
-  end
-
   def show?
     user_owns_todo_list? || user_collaborates_on_todo_list?
   end
@@ -39,10 +32,10 @@ class TodoPolicy < ApplicationPolicy
   private
 
   def user_owns_todo_list?
-    todo.todo_list.user_id == user.id
+    @record.todo_list.user_id == user.id
   end
 
   def user_collaborates_on_todo_list?
-    todo.todo_list.collaborators.exists?(user_id: user.id)
+    @record.todo_list.collaborators.exists?(user_id: user.id)
   end
 end

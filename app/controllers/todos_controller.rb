@@ -1,20 +1,19 @@
 class TodosController < ApplicationController
-  include Pundit::Authorization
-
   before_action :authenticate_user!  
   before_action :set_todo_list, only: [:index, :create]  
   before_action :set_todo, only: [:update, :destroy, :toggle_status]
 
   # GET 
   def index
-    todos = policy_scope(@todo_list.todos)
+    todos = @todo_list.todos
     render json: todos
   end
 
   # POST 
   def create
-    @todo = @todo_list.todos.new(todo_params)
+    @todo = Todo.new(todo_params.merge(todo_list: @todo_list))
     authorize @todo
+    @todo = @todo_list.todos.new(todo_params)
     if @todo.save
       render json: @todo, status: :created
     else
@@ -52,23 +51,19 @@ class TodosController < ApplicationController
     end
   end
 
-
   private
 
-  
   def set_todo_list
-    @todo_list = TodoList.joins(:collaborators)
-                       .where("todo_lists.user_id = :user_id OR collaborators.user_id = :user_id", user_id: current_user.id)
-                       .find_by(id: params[:todo_list_id])
-  render json: { error: "Todo List not found" }, status: :not_found unless @todo_list
+    @todo_list = policy_scope(TodoList).find_by(id: params[:todo_list_id])
+    unless @todo_list
+      render json: { error: "Todo List not found" }, status: :not_found
+    end
   end
 
   def set_todo
     @todo = policy_scope(Todo).find_by(id: params[:id])
-    if @todo.nil?
-      render json: { error: "Todo not found" }, status: :not_found
-    else
-      authorize @todo
+    unless @todo
+      render json: { error: 'Todo not found' }, status: :not_found
     end
   end
   

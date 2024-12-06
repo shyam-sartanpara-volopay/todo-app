@@ -4,8 +4,8 @@ RSpec.describe "TodoLists", type: :request do
   let(:user) { create(:user) }
   let(:collaborator_user) { create(:user) }
   let!(:todo_lists) { create_list(:todo_list, 10, user: user) } 
-  let!(:collaborator) { create(:collaborator, todo_list: todo_list, user: collaborator_user) }
   let(:todo_list) { todo_lists.first } 
+  let!(:collaborator) { create(:collaborator, todo_list: todo_list, user: collaborator_user) }
   let!(:collaborated_list) { create(:todo_list, user: create(:user)) }
   let(:auth_headers) { user.create_new_auth_token } 
   let(:collaborator_headers) { collaborator_user.create_new_auth_token }
